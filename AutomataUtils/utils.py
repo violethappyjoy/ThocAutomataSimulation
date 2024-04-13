@@ -75,6 +75,8 @@ def export_file(dfa_dict, alphabet, initial, final):
             i += 1
     dfa_output.close()
 
+    print("DFA.txt file created successfully.")  # Add this line
+
     # Visualization
     G = nx.DiGraph()
 
@@ -90,6 +92,7 @@ def export_file(dfa_dict, alphabet, initial, final):
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
     plt.title('DFA')
     plt.show()
+
 
 
 def main():
@@ -144,12 +147,11 @@ def main():
     print(f"\n{dfa_result_dict}")
 
 
-import tkinter as tk
-from tkinter import filedialog
-import os
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
-def visualize_nfa(nfa_filename):
+def visualize_nfa_from_file(nfa_filename):
     try:
         print("Visualizing NFA...")
 
@@ -164,25 +166,22 @@ def visualize_nfa(nfa_filename):
         final_states = lines[3].strip().split()
         transitions = [line.strip().split() for line in lines[4:]]
 
-        # Print extracted information
         print("States:", states_num)
         print("Alphabet:", alphabet)
         print("Initial state:", initial_state)
         print("Final states:", final_states)
-        print("Transitions:")
-        for transition in transitions:
-            print(transition)
+        print("Transitions:", transitions)
 
         # Create the NFA graph
         G = nx.MultiDiGraph()
 
-        # Add states
-        G.add_nodes_from(range(states_num))
-
         # Add transitions
         for transition in transitions:
             start_state, symbol, end_state = transition
-            G.add_edge(int(start_state), int(end_state), label=symbol)
+            label = f"{symbol}"
+            if start_state == end_state:  # Check for self-loop
+                label ="        "+f"{symbol}"
+            G.add_edge(int(start_state), int(end_state), label=label)
 
         # Mark initial and final states
         G.nodes[int(initial_state)]['color'] = 'green'
@@ -192,41 +191,22 @@ def visualize_nfa(nfa_filename):
         # Visualization
         pos = nx.spring_layout(G)
         edge_labels = {(n1, n2): d['label'] for n1, n2, d in G.edges(data=True)}
-        node_colors = [G.nodes[n].get('color', 'white') for n in G.nodes]
-        nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_labels=edge_labels)
+        node_colors = [G.nodes[n].get('color', 'lightblue') for n in G.nodes]
+
+        # Draw NFA
+        nx.draw(G, pos, with_labels=True, node_color=node_colors)
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-        plt.title('NFA')
+        plt.title('NFA Visualization')
         plt.show()
 
-        status_label.config(text="NFA visualization successful.", fg="green")
+        print("NFA visualization successful.")
     except Exception as e:
-        status_label.config(text=f"Error during visualization: {str(e)}", fg="red")
+        print(f"Error during visualization: {str(e)}")
 
 
-def browse_file():
-    print("Browse file button clicked")  # Debug print statement
-    filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
-    print("Selected file:", filename)  # Debug print statement
-    if filename:
-        nfa_filename_entry.delete(0, tk.END)
-        nfa_filename_entry.insert(0, filename)
-        visualize_nfa(filename)
+# Test the function with a sample NFA file
+nfa_filename = "NFA.txt"  # Replace this with the path to your NFA file
+visualize_nfa_from_file(nfa_filename)
 
 
-# Create the main window
-root = tk.Tk()
-root.title("NFA Visualizer")
 
-# Create and place widgets
-tk.Label(root, text="NFA File:").grid(row=0, column=0, padx=5, pady=5)
-nfa_filename_entry = tk.Entry(root, width=40)
-nfa_filename_entry.grid(row=0, column=1, padx=5, pady=5)
-
-browse_button = tk.Button(root, text="Browse", command=browse_file)
-browse_button.grid(row=0, column=2, padx=5, pady=5)
-
-status_label = tk.Label(root, text="", fg="green")
-status_label.grid(row=1, columnspan=3, padx=5, pady=5)
-
-# Run the main event loop
-root.mainloop()
